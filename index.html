@@ -47,6 +47,7 @@ select, button {
     align-items: center;
     text-align: center;
     min-height: 25vw;
+    white-space: pre-line;
 }
 
 .display.kanji {
@@ -87,6 +88,11 @@ select, button {
 .button-group button {
     flex: 1;
 }
+
+.button-group button.active {
+    background: #4caf50;
+    border: 2px solid white;
+}
 </style>
 </head>
 
@@ -97,21 +103,19 @@ select, button {
 
     <select id="grade">
         <option value="1">1학년</option>
-        <option value="2">2학년</option>
-        <option value="3">3학년</option>
-        <option value="4">4학년</option>
-        <option value="5">5학년</option>
-        <option value="6">6학년</option>
     </select>
 
+    <button onclick="toggleMode()">모드 전환</button>
+
     <div class="button-group">
-        <button onclick="toggleMode()">모드 전환</button>
-        <button id="tempBtn" onclick="showTemp()">뜻 보기</button>
+        <button id="btnMeaning" onclick="showMeaning()">뜻</button>
+        <button id="btnReading" onclick="showReading()">음훈</button>
+        <button id="btnWords" onclick="showWords()">단어</button>
     </div>
 
     <div class="display" id="display">一</div>
 
-    <div id="counter">1 / 80</div>
+    <div id="counter"></div>
 
     <div class="progress-bar">
         <div class="progress" id="progress"></div>
