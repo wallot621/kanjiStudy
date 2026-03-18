@@ -1007,11 +1007,3 @@ const kanjiData = {
 {k:"論", r:"논할 론"}
     ]
 };
-
-document.addEventListener('touchend', function (event) {
-    let now = new Date().getTime();
-    if (now - lastTouchEnd <= 300) {
-        event.preventDefault();
-    }
-    lastTouchEnd = now;
-}, false);
