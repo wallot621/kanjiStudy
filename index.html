@@ -26,10 +26,6 @@ body {
     text-align: center;
 }
 
-h2 {
-    margin-bottom: 15px;
-}
-
 html, body {
     touch-action: manipulation;
 }
@@ -43,11 +39,6 @@ select, button {
     border: none;
     border-radius: 8px;
     font-size: 16px;
-    cursor: pointer;
-}
-
-button:active {
-    background: #3a3f4d;
 }
 
 .display {
@@ -63,7 +54,7 @@ button:active {
 }
 
 .display.reading {
-    font-size: 9vw !important;
+    font-size: 9vw;
     line-height: 1.3;
 }
 
@@ -113,8 +104,10 @@ button:active {
         <option value="6">6학년</option>
     </select>
 
-    <button onclick="toggleMode()">모드 전환</button>
-    <button onclick="showTemp()">뜻 보기 / 한자 보기</button>
+    <div class="button-group">
+        <button onclick="toggleMode()">모드 전환</button>
+        <button id="tempBtn" onclick="showTemp()">뜻 보기</button>
+    </div>
 
     <div class="display" id="display">一</div>
 
@@ -131,58 +124,6 @@ button:active {
 </div>
 
 <script src="kanji.js"></script>
-
-<script>
-let mode = "kanji";
-let index = 0;
-
-function toggleMode(){
-    mode = (mode === "kanji") ? "reading" : "kanji";
-    update();
-}
-
-function nextKanji(){
-    let grade = document.getElementById("grade").value;
-    let list = kanjiData[grade];
-
-    index = (index + 1) % list.length;
-    update();
-}
-
-function prevKanji(){
-    let grade = document.getElementById("grade").value;
-    let list = kanjiData[grade];
-
-    index = (index - 1 + list.length) % list.length;
-    update();
-}
-
-function update(){
-    let grade = document.getElementById("grade").value;
-    let list = kanjiData[grade];
-    let item = list[index];
-
-    if(!item) return;
-
-    document.getElementById("display").innerText =
-        (mode === "kanji") ? item.k : item.r;
-
-    document.getElementById("counter").innerText =
-        (index + 1) + " / " + list.length + " ( " + grade + "학년 )";
-
-    // 진행률 바
-    let percent = ((index + 1) / list.length) * 100;
-    document.getElementById("progress").style.width = percent + "%";
-}
-
-// 학년 변경 시 초기화
-document.getElementById("grade").addEventListener("change", () => {
-    index = 0;
-    update();
-});
-
-update();
-</script>
 
 </body>
 </html>
