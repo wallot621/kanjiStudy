@@ -1,6 +1,13 @@
-let mode = "kanji";      // 기본 모드 (kanji / reading)
-let tempMode = null;     // meaning / reading / words / kanji
+let mode = "kanji";
+let tempMode = null;
 let index = 0;
+
+// ✔ 카타카나 → 히라가나 변환
+function toHiragana(str){
+    return str.replace(/[\u30a1-\u30f6]/g, ch =>
+        String.fromCharCode(ch.charCodeAt(0) - 0x60)
+    );
+}
 
 function toggleMode(){
     mode = (mode === "kanji") ? "reading" : "kanji";
@@ -8,12 +15,11 @@ function toggleMode(){
     update();
 }
 
-// ✔ 핵심: 완전 정상 토글 구조
+// ✔ 뜻 버튼 (완전 토글)
 function showMeaning(){
     if(tempMode === "meaning" || tempMode === "kanji"){
-        tempMode = null; // 해제
-    }
-    else{
+        tempMode = null;
+    } else {
         tempMode = (mode === "kanji") ? "meaning" : "kanji";
     }
     update();
@@ -30,21 +36,24 @@ function showWords(){
 }
 
 function nextKanji(){
-    let list = kanjiData[1];
+    let grade = document.getElementById("grade")?.value || 1;
+    let list = kanjiData[grade];
     index = (index + 1) % list.length;
     tempMode = null;
     update();
 }
 
 function prevKanji(){
-    let list = kanjiData[1];
+    let grade = document.getElementById("grade")?.value || 1;
+    let list = kanjiData[grade];
     index = (index - 1 + list.length) % list.length;
     tempMode = null;
     update();
 }
 
 function update(){
-    let list = kanjiData[1];
+    let grade = document.getElementById("grade")?.value || 1;
+    let list = kanjiData[grade];
     let item = list[index];
     let display = document.getElementById("display");
 
@@ -52,7 +61,7 @@ function update(){
     let btnReading = document.getElementById("btnReading");
     let btnWords = document.getElementById("btnWords");
 
-    // ✔ 버튼 텍스트 동적 변경
+    // ✔ 버튼 텍스트 자동 변경
     if(mode === "kanji"){
         btnMeaning.innerText = "뜻";
     } else {
@@ -77,28 +86,34 @@ function update(){
         btnMeaning.classList.add("active");
     }
 
-    // ✔ 음훈
+    // ✔ 음훈 (히라가나 변환 적용)
     else if(tempMode === "reading"){
-        display.innerText = item.on + "\n" + item.kun;
+        display.innerText =
+            toHiragana(item.on) + "\n" + toHiragana(item.kun);
         display.className = "display reading";
         btnReading.classList.add("active");
     }
 
-    // ✔ 단어 (2열 grid)
+    // ✔ 단어 (간격 고정 + 2열)
     else if(tempMode === "words"){
         display.innerHTML = `
             <div style="
                 display:grid;
-                grid-template-columns: 1fr 1fr;
-                text-align:center;
+                grid-template-columns: repeat(2, 120px);
+                justify-content:center;
+                column-gap:20px;
                 row-gap:10px;
+                text-align:center;
             ">
+                <!-- 한자 -->
                 <div style="font-weight:bold;">${item.words[0].w}</div>
                 <div style="font-weight:bold;">${item.words[1].w}</div>
 
+                <!-- 발음 -->
                 <div style="font-size:4vw; color:#aaa;">(${item.words[0].y})</div>
                 <div style="font-size:4vw; color:#aaa;">(${item.words[1].y})</div>
 
+                <!-- 뜻 -->
                 <div style="color:#ddd;">${item.words[0].m}</div>
                 <div style="color:#ddd;">${item.words[1].m}</div>
             </div>
@@ -126,6 +141,13 @@ function update(){
     let percent = ((index + 1) / list.length) * 100;
     document.getElementById("progress").style.width = percent + "%";
 }
+
+// ✔ 학년 변경 대응
+document.getElementById("grade")?.addEventListener("change", () => {
+    index = 0;
+    tempMode = null;
+    update();
+});
 
 const kanjiData = {
     1: [
