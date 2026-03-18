@@ -1,166 +1,588 @@
-// 상태 변수
-let mode = "kanji";     // 기본 모드 (kanji / reading)
-let tempView = false;   // 임시 뒤집기
+let mode = "kanji";
+let tempMode = null;
 let index = 0;
 
-// 모드 전환
 function toggleMode(){
     mode = (mode === "kanji") ? "reading" : "kanji";
-    tempView = false;
+    tempMode = null;
     update();
 }
 
-// 임시 뜻/한자 보기
-function showTemp(){
-    tempView = !tempView;
+function showMeaning(){
+    tempMode = (tempMode === "meaning") ? null : "meaning";
     update();
 }
 
-// 다음
+function showReading(){
+    tempMode = (tempMode === "reading") ? null : "reading";
+    update();
+}
+
+function showWords(){
+    tempMode = (tempMode === "words") ? null : "words";
+    update();
+}
+
 function nextKanji(){
-    let grade = document.getElementById("grade").value;
-    let list = kanjiData[grade];
-
+    let list = kanjiData[1];
     index = (index + 1) % list.length;
-    tempView = false;
+    tempMode = null;
     update();
 }
 
-// 이전
 function prevKanji(){
-    let grade = document.getElementById("grade").value;
-    let list = kanjiData[grade];
-
+    let list = kanjiData[1];
     index = (index - 1 + list.length) % list.length;
-    tempView = false;
+    tempMode = null;
     update();
 }
 
-// 화면 업데이트 (핵심)
 function update(){
-    let grade = document.getElementById("grade").value;
-    let list = kanjiData[grade];
+    let list = kanjiData[1];
     let item = list[index];
     let display = document.getElementById("display");
 
-    if(!item) return;
+    let btnMeaning = document.getElementById("btnMeaning");
+    let btnReading = document.getElementById("btnReading");
+    let btnWords = document.getElementById("btnWords");
 
-    let showKanji;
+    btnMeaning.classList.remove("active");
+    btnReading.classList.remove("active");
+    btnWords.classList.remove("active");
 
-    if(tempView){
-        // 임시 뒤집기
-        showKanji = (mode !== "kanji");
-    } else {
-        // 기본 모드
-        showKanji = (mode === "kanji");
-    }
-
-    if(showKanji){
-        display.innerText = item.k;
-        display.className = "display kanji";
-    } else {
+    if(tempMode === "meaning"){
         display.innerText = item.r;
         display.className = "display reading";
+        btnMeaning.classList.add("active");
+    }
+    else if(tempMode === "reading"){
+        display.innerText = item.on + "\n" + item.kun;
+        display.className = "display reading";
+        btnReading.classList.add("active");
+    }
+    else if(tempMode === "words"){
+        display.innerHTML = `
+            <div style="
+                display:grid;
+                grid-template-columns: 1fr 1fr;
+                text-align:center;
+                row-gap:10px;
+            ">
+                <!-- 1행: 한자 -->
+                <div style="font-weight:bold;">${item.words[0].w}</div>
+                <div style="font-weight:bold;">${item.words[1].w}</div>
+
+                <!-- 2행: 발음 -->
+                <div style="font-size:4vw; color:#aaa;">(${item.words[0].y})</div>
+                <div style="font-size:4vw; color:#aaa;">(${item.words[1].y})</div>
+
+                <!-- 3행: 뜻 -->
+                <div style="color:#ddd;">${item.words[0].m}</div>
+                <div style="color:#ddd;">${item.words[1].m}</div>
+            </div>
+        `;
+        display.className = "display reading";
+        btnWords.classList.add("active");
+    }
+    else {
+        if(mode === "kanji"){
+            display.innerText = item.k;
+            display.className = "display kanji";
+        } else {
+            display.innerText = item.r;
+            display.className = "display reading";
+        }
     }
 
-    // 카운터
     document.getElementById("counter").innerText =
-        (index + 1) + " / " + list.length + " ( " + grade + "학년 )";
+        (index + 1) + " / " + list.length;
 
-    // 진행률
     let percent = ((index + 1) / list.length) * 100;
     document.getElementById("progress").style.width = percent + "%";
 }
 
-// 학년 변경 시 초기화
-document.getElementById("grade").addEventListener("change", () => {
-    index = 0;
-    tempView = false;
-    update();
-});
-
 const kanjiData = {
     1: [
-        {k:"一", r:"한 일"},
-{k:"右", r:"오른 우"},
-{k:"雨", r:"비 우"},
-{k:"円", r:"둥글 원"},
-{k:"王", r:"임금 왕"},
-{k:"音", r:"소리 음"},
-{k:"下", r:"아래 하"},
-{k:"火", r:"불 화"},
-{k:"花", r:"꽃 화"},
-{k:"貝", r:"조개 패"},
-{k:"学", r:"배울 학"},
-{k:"気", r:"기운 기"},
-{k:"九", r:"아홉 구"},
-{k:"休", r:"쉴 휴"},
-{k:"玉", r:"구슬 옥"},
-{k:"金", r:"쇠 금"},
-{k:"空", r:"빌 공"},
-{k:"月", r:"달 월"},
-{k:"犬", r:"개 견"},
-{k:"見", r:"볼 견"},
-{k:"五", r:"다섯 오"},
-{k:"口", r:"입 구"},
-{k:"校", r:"학교 교"},
-{k:"左", r:"왼 좌"},
-{k:"三", r:"석 삼"},
-{k:"山", r:"산 산"},
-{k:"子", r:"아이 자"},
-{k:"四", r:"넉 사"},
-{k:"糸", r:"실 사"},
-{k:"字", r:"글자 자"},
-{k:"耳", r:"귀 이"},
-{k:"七", r:"일곱 칠"},
-{k:"車", r:"수레 차"},
-{k:"手", r:"손 수"},
-{k:"十", r:"열 십"},
-{k:"出", r:"날 출"},
-{k:"女", r:"여자 여"},
-{k:"小", r:"작을 소"},
-{k:"上", r:"위 상"},
-{k:"森", r:"숲 삼"},
-{k:"人", r:"사람 인"},
-{k:"水", r:"물 수"},
-{k:"正", r:"바를 정"},
-{k:"生", r:"날 생"},
-{k:"青", r:"푸를 청"},
-{k:"夕", r:"저녁 석"},
-{k:"石", r:"돌 석"},
-{k:"赤", r:"붉을 적"},
-{k:"千", r:"일천 천"},
-{k:"川", r:"내 천"},
-{k:"先", r:"먼저 선"},
-{k:"早", r:"이를 조"},
-{k:"草", r:"풀 초"},
-{k:"足", r:"발 족"},
-{k:"村", r:"마을 촌"},
-{k:"大", r:"클 대"},
-{k:"男", r:"남자 남"},
-{k:"竹", r:"대나무 죽"},
-{k:"中", r:"가운데 중"},
-{k:"虫", r:"벌레 충"},
-{k:"町", r:"거리 정"},
-{k:"天", r:"하늘 천"},
-{k:"田", r:"밭 전"},
-{k:"土", r:"흙 토"},
-{k:"二", r:"두 이"},
-{k:"日", r:"날 일"},
-{k:"入", r:"들 입"},
-{k:"年", r:"해 년"},
-{k:"白", r:"흰 백"},
-{k:"八", r:"여덟 팔"},
-{k:"百", r:"일백 백"},
-{k:"文", r:"글월 문"},
-{k:"木", r:"나무 목"},
-{k:"本", r:"근본 본"},
-{k:"名", r:"이름 명"},
-{k:"目", r:"눈 목"},
-{k:"立", r:"설 립"},
-{k:"力", r:"힘 력"},
-{k:"林", r:"수풀 림"},
-{k:"六", r:"여섯 육"}
+        {k:"一", r:"한 일", on:"イチ / イツ", kun:"ひと / ひと.つ",
+      words:[
+        {w:"一日", y:"いちにち", m:"하루"},
+        {w:"一人", y:"ひとり", m:"한 사람"}
+      ]},
+
+    {k:"二", r:"두 이", on:"ニ", kun:"ふた / ふた.つ",
+      words:[
+        {w:"二人", y:"ふたり", m:"두 사람"},
+        {w:"二日", y:"ふつか", m:"이틀"}
+      ]},
+
+    {k:"三", r:"석 삼", on:"サン", kun:"み / み.つ",
+      words:[
+        {w:"三人", y:"さんにん", m:"세 사람"},
+        {w:"三日", y:"みっか", m:"사흘"}
+      ]},
+
+    {k:"四", r:"넉 사", on:"シ", kun:"よん / よ",
+      words:[
+        {w:"四月", y:"しがつ", m:"4월"},
+        {w:"四人", y:"よにん", m:"네 사람"}
+      ]},
+
+    {k:"五", r:"다섯 오", on:"ゴ", kun:"いつ / いつ.つ",
+      words:[
+        {w:"五日", y:"いつか", m:"닷새"},
+        {w:"五人", y:"ごにん", m:"다섯 사람"}
+      ]},
+
+    {k:"六", r:"여섯 육", on:"ロク", kun:"む / む.つ",
+      words:[
+        {w:"六日", y:"むいか", m:"엿새"},
+        {w:"六時", y:"ろくじ", m:"6시"}
+      ]},
+
+    {k:"七", r:"일곱 칠", on:"シチ", kun:"なな",
+      words:[
+        {w:"七日", y:"なのか", m:"이레"},
+        {w:"七時", y:"しちじ", m:"7시"}
+      ]},
+
+    {k:"八", r:"여덟 팔", on:"ハチ", kun:"や / や.つ",
+      words:[
+        {w:"八日", y:"ようか", m:"여드레"},
+        {w:"八時", y:"はちじ", m:"8시"}
+      ]},
+
+    {k:"九", r:"아홉 구", on:"キュウ / ク", kun:"ここの / ここの.つ",
+      words:[
+        {w:"九日", y:"ここのか", m:"아흐레"},
+        {w:"九時", y:"くじ", m:"9시"}
+      ]},
+
+    {k:"十", r:"열 십", on:"ジュウ", kun:"とお",
+      words:[
+        {w:"十日", y:"とおか", m:"열흘"},
+        {w:"十年", y:"じゅうねん", m:"10년"}
+      ]},
+
+    {k:"日", r:"날 일", on:"ニチ / ジツ", kun:"ひ / び",
+      words:[
+        {w:"日本", y:"にほん", m:"일본"},
+        {w:"日曜日", y:"にちようび", m:"일요일"}
+      ]},
+
+    {k:"月", r:"달 월", on:"ゲツ / ガツ", kun:"つき",
+      words:[
+        {w:"月曜日", y:"げつようび", m:"월요일"},
+        {w:"今月", y:"こんげつ", m:"이번 달"}
+      ]},
+
+    {k:"火", r:"불 화", on:"カ", kun:"ひ",
+      words:[
+        {w:"火曜日", y:"かようび", m:"화요일"},
+        {w:"火山", y:"かざん", m:"화산"}
+      ]},
+
+    {k:"水", r:"물 수", on:"スイ", kun:"みず",
+      words:[
+        {w:"水曜日", y:"すいようび", m:"수요일"},
+        {w:"水泳", y:"すいえい", m:"수영"}
+      ]},
+
+    {k:"木", r:"나무 목", on:"モク / ボク", kun:"き",
+      words:[
+        {w:"木曜日", y:"もくようび", m:"목요일"},
+        {w:"木材", y:"もくざい", m:"목재"}
+      ]},
+
+    {k:"金", r:"쇠 금", on:"キン / コン", kun:"かね",
+      words:[
+        {w:"金曜日", y:"きんようび", m:"금요일"},
+        {w:"お金", y:"おかね", m:"돈"}
+      ]},
+
+    {k:"土", r:"흙 토", on:"ド / ト", kun:"つち",
+      words:[
+        {w:"土曜日", y:"どようび", m:"토요일"},
+        {w:"土地", y:"とち", m:"토지"}
+      ]},
+
+    {k:"山", r:"뫼 산", on:"サン", kun:"やま",
+      words:[
+        {w:"火山", y:"かざん", m:"화산"},
+        {w:"山川", y:"さんせん", m:"산천"}
+      ]},
+
+    {k:"川", r:"내 천", on:"セン", kun:"かわ",
+      words:[
+        {w:"河川", y:"かせん", m:"하천"},
+        {w:"川岸", y:"かわぎし", m:"강가"}
+      ]},
+
+    {k:"田", r:"밭 전", on:"デン", kun:"た",
+      words:[
+        {w:"田んぼ", y:"たんぼ", m:"논"},
+        {w:"水田", y:"すいでん", m:"수전"}
+      ]},
+
+    {k:"人", r:"사람 인", on:"ジン / ニン", kun:"ひと",
+      words:[
+        {w:"日本人", y:"にほんじん", m:"일본인"},
+        {w:"人生", y:"じんせい", m:"인생"}
+      ]},
+
+    {k:"口", r:"입 구", on:"コウ / ク", kun:"くち",
+      words:[
+        {w:"入口", y:"いりぐち", m:"입구"},
+        {w:"人口", y:"じんこう", m:"인구"}
+      ]},
+
+    {k:"目", r:"눈 목", on:"モク", kun:"め",
+      words:[
+        {w:"目標", y:"もくひょう", m:"목표"},
+        {w:"目的", y:"もくてき", m:"목적"}
+      ]},
+
+    {k:"耳", r:"귀 이", on:"ジ", kun:"みみ",
+      words:[
+        {w:"耳元", y:"みみもと", m:"귀 근처"},
+        {w:"耳鼻科", y:"じびか", m:"이비과"}
+      ]},
+
+    {k:"手", r:"손 수", on:"シュ", kun:"て",
+      words:[
+        {w:"手紙", y:"てがみ", m:"편지"},
+        {w:"上手", y:"じょうず", m:"능숙함"}
+      ]},
+
+    {k:"足", r:"발 족", on:"ソク", kun:"あし",
+      words:[
+        {w:"足音", y:"あしおと", m:"발소리"},
+        {w:"満足", y:"まんぞく", m:"만족"}
+      ]},
+
+    {k:"力", r:"힘 력", on:"リョク", kun:"ちから",
+      words:[
+        {w:"努力", y:"どりょく", m:"노력"},
+        {w:"体力", y:"たいりょく", m:"체력"}
+      ]},
+
+    {k:"女", r:"여자 녀", on:"ジョ", kun:"おんな",
+      words:[
+        {w:"女性", y:"じょせい", m:"여성"},
+        {w:"女子", y:"じょし", m:"여자"}
+      ]},
+
+    {k:"男", r:"남자 남", on:"ダン / ナン", kun:"おとこ",
+      words:[
+        {w:"男性", y:"だんせい", m:"남성"},
+        {w:"男の子", y:"おとこのこ", m:"남자아이"}
+      ]},
+
+    {k:"子", r:"아이 자", on:"シ", kun:"こ",
+      words:[
+        {w:"子供", y:"こども", m:"아이"},
+        {w:"女子", y:"じょし", m:"여자"}
+      ]},
+        {
+    k:"上", r:"위 상", on:"ジョウ", kun:"うえ",
+    words:[
+        {w:"上手", y:"じょうず", m:"잘함"},
+        {w:"上着", y:"うわぎ", m:"겉옷"}
+    ]},
+    {
+    k:"下", r:"아래 하", on:"カ", kun:"した",
+    words:[
+        {w:"地下", y:"ちか", m:"지하"},
+        {w:"下手", y:"へた", m:"서툼"}
+    ]},
+    {
+    k:"中", r:"가운데 중", on:"チュウ", kun:"なか",
+    words:[
+        {w:"中国", y:"ちゅうごく", m:"중국"},
+        {w:"中学校", y:"ちゅうがっこう", m:"중학교"}
+    ]},
+    {
+    k:"大", r:"큰 대", on:"ダイ", kun:"おお",
+    words:[
+        {w:"大学", y:"だいがく", m:"대학교"},
+        {w:"大人", y:"おとな", m:"어른"}
+    ]},
+    {
+    k:"小", r:"작을 소", on:"ショウ", kun:"ちい",
+    words:[
+        {w:"小学校", y:"しょうがっこう", m:"초등학교"},
+        {w:"小さい", y:"ちいさい", m:"작다"}
+    ]},
+    {
+    k:"左", r:"왼 좌", on:"サ", kun:"ひだり",
+    words:[
+        {w:"左右", y:"さゆう", m:"좌우"},
+        {w:"左手", y:"ひだりて", m:"왼손"}
+    ]},
+    {
+    k:"右", r:"오른 우", on:"ウ", kun:"みぎ",
+    words:[
+        {w:"右手", y:"みぎて", m:"오른손"},
+        {w:"左右", y:"さゆう", m:"좌우"}
+    ]},
+    {
+    k:"外", r:"바깥 외", on:"ガイ", kun:"そと",
+    words:[
+        {w:"外国", y:"がいこく", m:"외국"},
+        {w:"外出", y:"がいしゅつ", m:"외출"}
+    ]},
+    {
+    k:"内", r:"안 내", on:"ナイ", kun:"うち",
+    words:[
+        {w:"内容", y:"ないよう", m:"내용"},
+        {w:"国内", y:"こくない", m:"국내"}
+    ]},
+    {
+    k:"学", r:"배울 학", on:"ガク", kun:"まな",
+    words:[
+        {w:"学生", y:"がくせい", m:"학생"},
+        {w:"学校", y:"がっこう", m:"학교"}
+    ]},
+    {
+    k:"校", r:"학교 교", on:"コウ", kun:"",
+    words:[
+        {w:"学校", y:"がっこう", m:"학교"},
+        {w:"校長", y:"こうちょう", m:"교장"}
+    ]},
+    {
+    k:"生", r:"날 생", on:"セイ", kun:"い",
+    words:[
+        {w:"先生", y:"せんせい", m:"선생님"},
+        {w:"学生", y:"がくせい", m:"학생"}
+    ]},
+    {
+    k:"先", r:"먼저 선", on:"セン", kun:"さき",
+    words:[
+        {w:"先生", y:"せんせい", m:"선생님"},
+        {w:"先週", y:"せんしゅう", m:"지난주"}
+    ]},
+    {
+    k:"年", r:"해 년", on:"ネン", kun:"",
+    words:[
+        {w:"今年", y:"ことし", m:"올해"},
+        {w:"来年", y:"らいねん", m:"내년"}
+    ]},
+    {
+    k:"時", r:"때 시", on:"ジ", kun:"とき",
+    words:[
+        {w:"時間", y:"じかん", m:"시간"},
+        {w:"時計", y:"とけい", m:"시계"}
+    ]},
+    {
+    k:"分", r:"나눌 분", on:"ブン", kun:"わ",
+    words:[
+        {w:"分かる", y:"わかる", m:"알다"},
+        {w:"自分", y:"じぶん", m:"자신"}
+    ]},
+    {
+    k:"間", r:"사이 간", on:"カン", kun:"あいだ",
+    words:[
+        {w:"時間", y:"じかん", m:"시간"},
+        {w:"人間", y:"にんげん", m:"인간"}
+    ]},
+    {
+    k:"何", r:"무엇 하", on:"カ", kun:"なに",
+    words:[
+        {w:"何時", y:"なんじ", m:"몇 시"},
+        {w:"何人", y:"なんにん", m:"몇 명"}
+    ]},
+    {
+    k:"百", r:"일백 백", on:"ヒャク", kun:"",
+    words:[
+        {w:"百円", y:"ひゃくえん", m:"100엔"},
+        {w:"百人", y:"ひゃくにん", m:"100명"}
+    ]},
+    {
+    k:"千", r:"일천 천", on:"セン", kun:"",
+    words:[
+        {w:"千円", y:"せんえん", m:"1000엔"},
+        {w:"千年", y:"せんねん", m:"천년"}
+    ]},
+    {
+    k:"万", r:"일만 만", on:"マン", kun:"",
+    words:[
+        {w:"一万円", y:"いちまんえん", m:"1만엔"},
+        {w:"万人", y:"ばんにん", m:"많은 사람"}
+    ]},
+    {
+    k:"円", r:"엔 원", on:"エン", kun:"",
+    words:[
+        {w:"円安", y:"えんやす", m:"엔저"},
+        {w:"円高", y:"えんだか", m:"엔고"}
+    ]},
+    {
+    k:"本", r:"근본 본", on:"ホン", kun:"もと",
+    words:[
+        {w:"日本", y:"にほん", m:"일본"},
+        {w:"本当", y:"ほんとう", m:"정말"}
+    ]},
+    {
+    k:"気", r:"기운 기", on:"キ", kun:"",
+    words:[
+        {w:"元気", y:"げんき", m:"건강함"},
+        {w:"気持ち", y:"きもち", m:"기분"}
+    ]},
+    {
+    k:"名", r:"이름 명", on:"メイ", kun:"な",
+    words:[
+        {w:"名前", y:"なまえ", m:"이름"},
+        {w:"有名", y:"ゆうめい", m:"유명"}
+    ]},
+    {
+    k:"天", r:"하늘 천", on:"テン", kun:"",
+    words:[
+        {w:"天気", y:"てんき", m:"날씨"},
+        {w:"天才", y:"てんさい", m:"천재"}
+    ]},
+    {
+    k:"雨", r:"비 우", on:"ウ", kun:"あめ",
+    words:[
+        {w:"雨天", y:"うてん", m:"우천"},
+        {w:"雨水", y:"あまみず", m:"빗물"}
+    ]},
+    {
+    k:"電", r:"전기 전", on:"デン", kun:"",
+    words:[
+        {w:"電車", y:"でんしゃ", m:"전철"},
+        {w:"電話", y:"でんわ", m:"전화"}
+    ]},
+    {
+    k:"車", r:"수레 차", on:"シャ", kun:"くるま",
+    words:[
+        {w:"電車", y:"でんしゃ", m:"전철"},
+        {w:"車", y:"くるま", m:"차"}
+    ]},
+    {
+    k:"語", r:"말씀 어", on:"ゴ", kun:"",
+    words:[
+        {w:"日本語", y:"にほんご", m:"일본어"},
+        {w:"英語", y:"えいご", m:"영어"}
+    ]},
+        {
+    k:"入", r:"들 입", on:"ニュウ", kun:"い",
+    words:[
+        {w:"入口", y:"いりぐち", m:"입구"},
+        {w:"入学", y:"にゅうがく", m:"입학"}
+    ]},
+    {
+    k:"出", r:"날 출", on:"シュツ", kun:"で",
+    words:[
+        {w:"出口", y:"でぐち", m:"출구"},
+        {w:"出発", y:"しゅっぱつ", m:"출발"}
+    ]},
+    {
+    k:"立", r:"설 립", on:"リツ", kun:"た",
+    words:[
+        {w:"立つ", y:"たつ", m:"서다"},
+        {w:"立場", y:"たちば", m:"입장"}
+    ]},
+    {
+    k:"見", r:"볼 견", on:"ケン", kun:"み",
+    words:[
+        {w:"見る", y:"みる", m:"보다"},
+        {w:"見学", y:"けんがく", m:"견학"}
+    ]},
+    {
+    k:"行", r:"갈 행", on:"コウ", kun:"い",
+    words:[
+        {w:"行く", y:"いく", m:"가다"},
+        {w:"銀行", y:"ぎんこう", m:"은행"}
+    ]},
+    {
+    k:"来", r:"올 래", on:"ライ", kun:"く",
+    words:[
+        {w:"来る", y:"くる", m:"오다"},
+        {w:"来年", y:"らいねん", m:"내년"}
+    ]},
+    {
+    k:"食", r:"먹을 식", on:"ショク", kun:"た",
+    words:[
+        {w:"食べる", y:"たべる", m:"먹다"},
+        {w:"食事", y:"しょくじ", m:"식사"}
+    ]},
+    {
+    k:"飲", r:"마실 음", on:"イン", kun:"の",
+    words:[
+        {w:"飲む", y:"のむ", m:"마시다"},
+        {w:"飲料", y:"いんりょう", m:"음료"}
+    ]},
+    {
+    k:"貝", r:"조개 패", on:"バイ", kun:"かい",
+    words:[
+        {w:"貝殻", y:"かいがら", m:"조개껍질"},
+        {w:"貝類", y:"かいるい", m:"조개류"}
+    ]},
+    {
+    k:"花", r:"꽃 화", on:"カ", kun:"はな",
+    words:[
+        {w:"花見", y:"はなみ", m:"꽃구경"},
+        {w:"花火", y:"はなび", m:"불꽃놀이"}
+    ]},
+    {
+    k:"草", r:"풀 초", on:"ソウ", kun:"くさ",
+    words:[
+        {w:"草原", y:"そうげん", m:"초원"},
+        {w:"草花", y:"くさばな", m:"풀꽃"}
+    ]},
+    {
+    k:"虫", r:"벌레 충", on:"チュウ", kun:"むし",
+    words:[
+        {w:"虫歯", y:"むしば", m:"충치"},
+        {w:"昆虫", y:"こんちゅう", m:"곤충"}
+    ]},
+    {
+    k:"犬", r:"개 견", on:"ケン", kun:"いぬ",
+    words:[
+        {w:"犬", y:"いぬ", m:"개"},
+        {w:"子犬", y:"こいぬ", m:"강아지"}
+    ]},
+    {
+    k:"竹", r:"대 죽", on:"チク", kun:"たけ",
+    words:[
+        {w:"竹林", y:"ちくりん", m:"대나무 숲"},
+        {w:"竹刀", y:"しない", m:"죽도"}
+    ]},
+    {
+    k:"糸", r:"실 사", on:"シ", kun:"いと",
+    words:[
+        {w:"毛糸", y:"けいと", m:"털실"},
+        {w:"糸口", y:"いとぐち", m:"실마리"}
+    ]},
+    {
+    k:"文", r:"글월 문", on:"ブン", kun:"ふみ",
+    words:[
+        {w:"文字", y:"もじ", m:"문자"},
+        {w:"作文", y:"さくぶん", m:"작문"}
+    ]},
+    {
+    k:"字", r:"글자 자", on:"ジ", kun:"",
+    words:[
+        {w:"文字", y:"もじ", m:"문자"},
+        {w:"漢字", y:"かんじ", m:"한자"}
+    ]},
+    {
+    k:"玉", r:"구슬 옥", on:"ギョク", kun:"たま",
+    words:[
+        {w:"宝玉", y:"ほうぎょく", m:"보석"},
+        {w:"玉石", y:"ぎょくせき", m:"옥과 돌"}
+    ]},
+    {
+    k:"石", r:"돌 석", on:"セキ", kun:"いし",
+    words:[
+        {w:"石", y:"いし", m:"돌"},
+        {w:"宝石", y:"ほうせき", m:"보석"}
+    ]},
+    {
+    k:"夕", r:"저녁 석", on:"セキ", kun:"ゆう",
+    words:[
+        {w:"夕方", y:"ゆうがた", m:"저녁때"},
+        {w:"夕日", y:"ゆうひ", m:"석양"}
+    ]}
+      
     ],
 
     2: [
