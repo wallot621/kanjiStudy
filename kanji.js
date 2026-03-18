@@ -1,5 +1,15 @@
 display.className = "display reading";
 
+let lastTouchEnd = 0;
+
+document.addEventListener('touchend', function (event) {
+    let now = new Date().getTime();
+    if (now - lastTouchEnd <= 300) {
+        event.preventDefault();
+    }
+    lastTouchEnd = now;
+}, false);
+
 const kanjiData = {
     1: [
         {k:"一", r:"한 일"},
