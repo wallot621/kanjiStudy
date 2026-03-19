@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>한자 학습</title>
 
 <style>
@@ -26,10 +26,6 @@ body {
     text-align: center;
 }
 
-html, body {
-    touch-action: manipulation;
-}
-
 select, button {
     width: 100%;
     padding: 14px;
@@ -38,15 +34,15 @@ select, button {
     color: white;
     border: none;
     border-radius: 8px;
-    font-size: 16px;
 }
 
+/* ⭐ 핵심: 높이 통일 */
 .display {
+    min-height: 260px;
     display: flex;
-    justify-content: center;
     align-items: center;
+    justify-content: center;
     text-align: center;
-    min-height: 25vw;
     white-space: pre-line;
 }
 
@@ -56,13 +52,6 @@ select, button {
 
 .display.reading {
     font-size: 9vw;
-    line-height: 1.3;
-}
-
-#counter {
-    font-size: 14px;
-    color: #aaa;
-    margin-bottom: 10px;
 }
 
 .progress-bar {
@@ -71,7 +60,7 @@ select, button {
     background: #333;
     border-radius: 3px;
     overflow: hidden;
-    margin-bottom: 15px;
+    margin: 10px 0;
 }
 
 .progress {
@@ -85,13 +74,8 @@ select, button {
     gap: 10px;
 }
 
-.button-group button {
-    flex: 1;
-}
-
 .button-group button.active {
     background: #4caf50;
-    border: 2px solid white;
 }
 </style>
 </head>
@@ -99,10 +83,15 @@ select, button {
 <body>
 
 <div class="container">
-    <h2>한자 학습</h2>
+    <h2>초등 상용한자</h2>
 
     <select id="grade">
         <option value="1">1학년</option>
+        <option value="2">2학년</option>
+        <option value="3">3학년</option>
+        <option value="4">4학년</option>
+        <option value="5">5학년</option>
+        <option value="6">6학년</option>
     </select>
 
     <button onclick="toggleMode()">모드 전환</button>
@@ -113,7 +102,14 @@ select, button {
         <button id="btnWords" onclick="showWords()">단어</button>
     </div>
 
-    <div class="display" id="display">一</div>
+    <!-- ⭐ 체크박스 추가 -->
+    <div style="text-align:right; margin-top:10px;">
+        <label>
+            <input type="checkbox" id="showMeaningChk"> 한자/뜻 같이보기
+        </label>
+    </div>
+
+    <div class="display kanji" id="display"></div>
 
     <div id="counter"></div>
 
@@ -127,7 +123,15 @@ select, button {
     </div>
 </div>
 
-<script src="kanji.js"></script>
+<script src="grade1.js"></script>
+<script src="grade2.js"></script>
+<script src="grade3.js"></script>
+<script src="grade4.js"></script>
+<script src="grade5.js"></script>
+<script src="grade6.js"></script>
+
+<script src="kanjiData.js"></script>
+<script src="main.js"></script>
 
 </body>
 </html>
