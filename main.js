@@ -45,11 +45,13 @@ function toggleMode(){
     update();
 }
 
+/* ⭐ 충돌 없는 버튼 로직 */
+
 function showMeaning(){
-    if(tempMode === "meaning" || tempMode === "kanji"){
-        tempMode = null;
+    if(mode === "kanji"){
+        tempMode = (tempMode === "meaning") ? null : "meaning";
     } else {
-        tempMode = (mode === "kanji") ? "meaning" : "kanji";
+        tempMode = (tempMode === "kanji") ? null : "kanji";
     }
     update();
 }
@@ -96,7 +98,11 @@ function update(){
 
     let item = list[index];
 
-    /* ⭐ 슬라이더 위치 */
+    /* ⭐ 렌더 초기화 (핵심 버그 해결) */
+    display.innerHTML = "";
+    display.innerText = "";
+
+    /* ⭐ 슬라이더 */
     const percent = index / (list.length - 1);
     sliderThumb.style.left = (percent * 100) + "%";
 
@@ -105,7 +111,6 @@ function update(){
     btnReading.classList.remove("active");
     btnWords.classList.remove("active");
 
-    /* ⭐ 버튼 텍스트 */
     btnMeaning.innerText = (mode === "kanji") ? "뜻" : "한자";
 
     /* ===== 출력 ===== */
@@ -198,7 +203,7 @@ function update(){
 
 window.onload = () => {
 
-    loadState(); // ⭐ 복원
+    loadState();
 
     const wrap = document.getElementById("sliderWrap");
     const thumb = document.getElementById("sliderThumb");
@@ -244,8 +249,9 @@ window.onload = () => {
     document.getElementById("grade")
         .addEventListener("change", () => {
             index = 0;
+            tempMode = null;
             update();
         });
 
-    update(); // ⭐ 마지막 실행
+    update();
 };
