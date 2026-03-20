@@ -4,6 +4,34 @@ let index = 0;
 
 let isDragging = false;
 
+/* =========================
+   ⭐ 상태 저장 / 불러오기
+========================= */
+
+function saveState(){
+    localStorage.setItem("kanjiState", JSON.stringify({
+        index,
+        mode,
+        tempMode,
+        grade: document.getElementById("grade").value,
+        showMeaning: document.getElementById("showMeaningChk").checked
+    }));
+}
+
+function loadState(){
+    const data = JSON.parse(localStorage.getItem("kanjiState"));
+    if(!data) return;
+
+    index = data.index ?? 0;
+    mode = data.mode ?? "kanji";
+    tempMode = data.tempMode ?? null;
+
+    document.getElementById("grade").value = data.grade ?? "1";
+    document.getElementById("showMeaningChk").checked = data.showMeaning ?? false;
+}
+
+/* ========================= */
+
 function toHiragana(str){
     if(!str) return "";
     return str.replace(/[\u30a1-\u30f6]/g, ch =>
@@ -80,7 +108,7 @@ function update(){
     /* ⭐ 버튼 텍스트 */
     btnMeaning.innerText = (mode === "kanji") ? "뜻" : "한자";
 
-    /* ===== 출력 로직 ===== */
+    /* ===== 출력 ===== */
 
     if(tempMode === "meaning"){
         display.innerText = item.r;
@@ -99,45 +127,40 @@ function update(){
         btnReading.classList.add("active");
     }
     else if(tempMode === "words"){
-    display.innerHTML = `
-        <div style="
-            display:grid;
-            grid-template-columns:1fr 1fr;
-            column-gap:2em;   /* ⭐ 좌우 간격 크게 */
-            row-gap:0.0em;    /* ⭐ 위아래는 최소 */
-            text-align:center;
-            font-size:1.2em;
-        ">
+        display.innerHTML = `
+            <div style="
+                display:grid;
+                grid-template-columns:1fr 1fr;
+                column-gap:2em;
+                row-gap:0em;
+                text-align:center;
+                font-size:1.2em;
+            ">
+                <div style="font-size:1em; font-weight:bold;">
+                    ${item.words[0].w}
+                </div>
+                <div style="font-size:1em; font-weight:bold;">
+                    ${item.words[1].w}
+                </div>
 
-            <!-- 단어 -->
-            <div style="font-size:1em; font-weight:bold;">
-                ${item.words[0].w}
-            </div>
-            <div style="font-size:1em; font-weight:bold;">
-                ${item.words[1].w}
-            </div>
+                <div style="font-size:0.5em; color:#aaa;">
+                    (${item.words[0].y})
+                </div>
+                <div style="font-size:0.5em; color:#aaa;">
+                    (${item.words[1].y})
+                </div>
 
-            <!-- 발음 -->
-            <div style="font-size:0.5em; color:#aaa;">
-                (${item.words[0].y})
+                <div style="font-size:0.7em;">
+                    ${item.words[0].m}
+                </div>
+                <div style="font-size:0.7em;">
+                    ${item.words[1].m}
+                </div>
             </div>
-            <div style="font-size:0.5em; color:#aaa;">
-                (${item.words[1].y})
-            </div>
-
-            <!-- 뜻 -->
-            <div style="font-size:0.7em;">
-                ${item.words[0].m}
-            </div>
-            <div style="font-size:0.7em;">
-                ${item.words[1].m}
-            </div>
-
-        </div>
-    `;
-    display.className = "display reading";
-    btnWords.classList.add("active");
-}
+        `;
+        display.className = "display reading";
+        btnWords.classList.add("active");
+    }
     else if(showMeaningChk){
         display.innerHTML = `
             <div style="text-align:center;">
@@ -152,7 +175,6 @@ function update(){
         display.className = "display";
     }
     else {
-        /* ⭐ 여기 핵심 수정 */
         if(mode === "kanji"){
             display.innerText = item.k;
             display.className = "display kanji";
@@ -162,12 +184,21 @@ function update(){
         }
     }
 
+    /* ⭐ 카운터 */
     document.getElementById("counter").innerText =
         (index + 1) + " / " + list.length;
+
+    /* ⭐ 상태 저장 */
+    saveState();
 }
 
-/* ⭐ 슬라이더 */
+/* =========================
+   ⭐ 슬라이더 + 초기화
+========================= */
+
 window.onload = () => {
+
+    loadState(); // ⭐ 복원
 
     const wrap = document.getElementById("sliderWrap");
     const thumb = document.getElementById("sliderThumb");
@@ -216,5 +247,5 @@ window.onload = () => {
             update();
         });
 
-    update();
+    update(); // ⭐ 마지막 실행
 };
