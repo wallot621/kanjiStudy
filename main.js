@@ -53,8 +53,13 @@ function prevKanji(){
 function update(){
     let list = kanjiData[document.getElementById("grade").value];
     let display = document.getElementById("display");
-
     let sliderThumb = document.getElementById("sliderThumb");
+
+    let btnMeaning = document.getElementById("btnMeaning");
+    let btnReading = document.getElementById("btnReading");
+    let btnWords = document.getElementById("btnWords");
+
+    let showMeaningChk = document.getElementById("showMeaningChk").checked;
 
     if(!list || list.length === 0){
         display.innerText = "데이터 없음";
@@ -67,42 +72,101 @@ function update(){
     const percent = index / (list.length - 1);
     sliderThumb.style.left = (percent * 100) + "%";
 
+    /* ⭐ 버튼 초기화 */
+    btnMeaning.classList.remove("active");
+    btnReading.classList.remove("active");
+    btnWords.classList.remove("active");
+
+    /* ⭐ 버튼 텍스트 */
+    btnMeaning.innerText = (mode === "kanji") ? "뜻" : "한자";
+
+    /* ===== 출력 로직 ===== */
+
     if(tempMode === "meaning"){
         display.innerText = item.r;
         display.className = "display reading";
+        btnMeaning.classList.add("active");
     }
     else if(tempMode === "kanji"){
         display.innerText = item.k;
         display.className = "display kanji";
+        btnMeaning.classList.add("active");
     }
     else if(tempMode === "reading"){
         display.innerText =
             toHiragana(item.on) + "\n" + toHiragana(item.kun);
         display.className = "display reading";
+        btnReading.classList.add("active");
     }
     else if(tempMode === "words"){
+    display.innerHTML = `
+        <div style="
+            display:grid;
+            grid-template-columns:1fr 1fr;
+            column-gap:2em;   /* ⭐ 좌우 간격 크게 */
+            row-gap:0.0em;    /* ⭐ 위아래는 최소 */
+            text-align:center;
+            font-size:1.2em;
+        ">
+
+            <!-- 단어 -->
+            <div style="font-size:1em; font-weight:bold;">
+                ${item.words[0].w}
+            </div>
+            <div style="font-size:1em; font-weight:bold;">
+                ${item.words[1].w}
+            </div>
+
+            <!-- 발음 -->
+            <div style="font-size:0.5em; color:#aaa;">
+                (${item.words[0].y})
+            </div>
+            <div style="font-size:0.5em; color:#aaa;">
+                (${item.words[1].y})
+            </div>
+
+            <!-- 뜻 -->
+            <div style="font-size:0.7em;">
+                ${item.words[0].m}
+            </div>
+            <div style="font-size:0.7em;">
+                ${item.words[1].m}
+            </div>
+
+        </div>
+    `;
+    display.className = "display reading";
+    btnWords.classList.add("active");
+}
+    else if(showMeaningChk){
         display.innerHTML = `
-            <div style="display:grid; grid-template-columns:repeat(2,120px); gap:10px;">
-                <div>${item.words[0].w}</div>
-                <div>${item.words[1].w}</div>
-                <div style="color:#aaa;">(${item.words[0].y})</div>
-                <div style="color:#aaa;">(${item.words[1].y})</div>
-                <div>${item.words[0].m}</div>
-                <div>${item.words[1].m}</div>
+            <div style="text-align:center;">
+                <div style="font-size:14vw; font-weight:bold;">
+                    ${item.k}
+                </div>
+                <div style="font-size:5vw; color:#aaa;">
+                    ${item.r}
+                </div>
             </div>
         `;
-        display.className = "display reading";
+        display.className = "display";
     }
     else {
-        display.innerText = item.k;
-        display.className = "display kanji";
+        /* ⭐ 여기 핵심 수정 */
+        if(mode === "kanji"){
+            display.innerText = item.k;
+            display.className = "display kanji";
+        } else {
+            display.innerText = item.r;
+            display.className = "display reading";
+        }
     }
 
     document.getElementById("counter").innerText =
         (index + 1) + " / " + list.length;
 }
 
-/* ⭐ 슬라이더 로직 */
+/* ⭐ 슬라이더 */
 window.onload = () => {
 
     const wrap = document.getElementById("sliderWrap");
@@ -143,10 +207,14 @@ window.onload = () => {
 
     document.addEventListener("touchend", () => isDragging = false);
 
-    document.getElementById("grade").addEventListener("change", () => {
-        index = 0;
-        update();
-    });
+    document.getElementById("showMeaningChk")
+        .addEventListener("change", update);
+
+    document.getElementById("grade")
+        .addEventListener("change", () => {
+            index = 0;
+            update();
+        });
 
     update();
 };
