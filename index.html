@@ -1,183 +1,103 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>한자 학습</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kanji Study</title>
 
-<style>
-body {
-    background: #0f0f13;
-    color: white;
-    font-family: Arial;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100dvh;
-    margin: 0;
-    overscroll-behavior-x: none;
-}
+  <style>
+    body {
+      margin: 0;
+      background: #111;
+      color: white;
+      font-family: sans-serif;
 
-.phone-frame {
-    width: 100%;
-    max-width: 420px;
-    aspect-ratio: 9 / 19.5;  /* 아이폰 비율 */
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
+      display: flex;
+      justify-content: center;
+      align-items: center;
 
-.container {
-    width: 100%;
-    height: 100%;
-    background: #1c1f26;
-    padding: 20px;
-    border-radius: 12px;
-    text-align: center;
-    box-sizing: border-box;
-}
+      height: 100dvh;
+    }
 
-select, button {
-    width: 100%;
-    padding: 14px;
-    margin-top: 10px;
-    background: #2a2e38;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 0.7em;
-}
+    /* 전체 화면 (아이폰 비율 느낌) */
+    .app {
+      width: 390px;
+      height: calc(100dvh - 20px);
 
-.display {
-    height: 320px;        /* ⭐ 고정 높이 */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    white-space: pre-line;
-    overflow: hidden;     /* ⭐ 넘치는 거 잘라냄 */
-}
+      background: #1a1a1a;
+      border-radius: 20px;
+      padding: 20px;
 
-.display.kanji {
-    font-size: 1.5em;
-}
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
 
-.display.reading {
-    font-size: 1em;
-}
+    /* display 영역 */
+    #display {
+      height: 60%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
 
-.button-group {
-    display: flex;
-    gap: 10px;
-}
+      text-align: center;
+      gap: 1em;
+    }
 
-.button-group button.active {
-    background: #4caf50;
-}
+    /* 단어 영역 */
+    .word-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.3em;
+    }
 
-/* ⭐ 커스텀 슬라이더 */
-#sliderWrap {
-    position: relative;
-    width: 85%;          /* ⭐ 길이 줄임 */
-    margin: 10px auto 0;
-    height: 30px;
+    /* 🔥 여기부터 핵심 (크기 분리) */
+    .word-kanji {
+      font-size: 2.5em;
+      font-weight: bold;
+    }
 
-    touch-action: pan-y; /* ⭐ 좌우 스와이프 방지 */
-}
+    .word-reading {
+      font-size: 1.1em;
+      opacity: 0.8;
+    }
 
-#sliderTrack {
-    position: absolute;
-    top: 50%;
-    left: 0;
-    width: 100%;
-    height: 6px;
-    background: #444;
-    transform: translateY(-50%);
-    border-radius: 3px;
-}
+    .word-meaning {
+      font-size: 1.4em;
+    }
 
-#sliderThumb {
-    position: absolute;
-    top: 50%;
-    width: 20px;
-    height: 20px;
-    background: #4caf50;
-    border-radius: 50%;
-    transform: translate(-50%, -50%);
-}
-</style>
+    /* 버튼 */
+    .controls {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    button {
+      flex: 1;
+      padding: 10px;
+      border-radius: 10px;
+      border: none;
+      background: #2e7d32;
+      color: white;
+      font-size: 1em;
+    }
+  </style>
 </head>
-
 <body>
 
-<div class="phone-frame">
-    <div class="container">
+  <div class="app">
+    <div id="display"></div>
 
-        <h2>초등 상용한자 V0.3</h2>
-
-        <select id="grade">
-            <option value="1">1학년</option>
-            <option value="2">2학년</option>
-            <option value="3">3학년</option>
-            <option value="4">4학년</option>
-            <option value="5">5학년</option>
-            <option value="6">6학년</option>
-        </select>
-
-        <button onclick="toggleMode()">모드 전환</button>
-
-        <div class="button-group">
-            <button id="btnReading" onclick="showReading()">음훈</button>
-            <button id="btnWords" onclick="showWords()">단어</button>
-        </div>
-
-        <div style="text-align:right; margin-top:10px;">
-            <label>
-                <input type="checkbox" id="showMeaningChk"> 한자/뜻 같이보기
-            </label>
-        </div>
-
-        <div class="display kanji" id="display"></div>
-
-        <div style="position:relative; margin-top:10px; height:50px; display:flex; align-items:center;">
-            <div id="counter" style="
-                position:absolute;
-                left:50%;
-                transform:translateX(-50%);
-                font-size:14px;
-                color:#aaa;
-            "></div>
-
-            <button id="btnMeaning" onclick="showMeaning()" style="
-                margin-left:auto;
-                width:50px;
-                height:50px;
-            ">뜻</button>
-        </div>
-
-        <!-- 슬라이더 -->
-        <div id="sliderWrap">
-            <div id="sliderTrack"></div>
-            <div id="sliderThumb"></div>
-        </div>
-
-        <div class="button-group">
-            <button onclick="prevKanji()">이전</button>
-            <button onclick="nextKanji()">다음</button>
-        </div>
-
+    <div class="controls">
+      <button onclick="prev()">이전</button>
+      <button onclick="next()">다음</button>
     </div>
-</div>
+  </div>
 
-<script src="./grade1.js"></script>
-<script src="./grade2.js"></script>
-<script src="./grade3.js"></script>
-<script src="./grade4.js"></script>
-<script src="./grade5.js"></script>
-<script src="./grade6.js"></script>
-
-<script src="./kanjiData.js"></script>
-<script src="./main.js"></script>
-
+  <script src="kanjiData.js"></script>
+  <script src="main.js"></script>
 </body>
 </html>
