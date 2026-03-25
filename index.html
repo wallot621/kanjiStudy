@@ -13,24 +13,28 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh;
+    height: 100dvh;
     margin: 0;
-
-    /* ⭐ 모바일 뒤로가기 방지 */
     overscroll-behavior-x: none;
 }
 
-    html, body {
-    touch-action: manipulation; /* ⭐ 핵심 */
+.phone-frame {
+    width: 100%;
+    max-width: 420px;
+    aspect-ratio: 9 / 19.5;  /* 아이폰 비율 */
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 .container {
-    width: 90%;
-    max-width: 420px;
+    width: 100%;
+    height: 100%;
     background: #1c1f26;
     padding: 20px;
     border-radius: 12px;
     text-align: center;
+    box-sizing: border-box;
 }
 
 select, button {
@@ -45,20 +49,21 @@ select, button {
 }
 
 .display {
-    min-height: 260px;
+    height: 320px;        /* ⭐ 고정 높이 */
     display: flex;
     align-items: center;
     justify-content: center;
     text-align: center;
     white-space: pre-line;
+    overflow: hidden;     /* ⭐ 넘치는 거 잘라냄 */
 }
 
 .display.kanji {
-    font-size: 18vw;
+    font-size: 5em;
 }
 
 .display.reading {
-    font-size: 9vw;
+    font-size: 2.5em;
 }
 
 .button-group {
@@ -105,58 +110,62 @@ select, button {
 
 <body>
 
-<div class="container">
-    <h2>초등 상용한자 V0.3</h2>
+<div class="phone-frame">
+    <div class="container">
 
-    <select id="grade">
-        <option value="1">1학년</option>
-        <option value="2">2학년</option>
-        <option value="3">3학년</option>
-        <option value="4">4학년</option>
-        <option value="5">5학년</option>
-        <option value="6">6학년</option>
-    </select>
+        <h2>초등 상용한자 V0.3</h2>
 
-    <button onclick="toggleMode()">모드 전환</button>
+        <select id="grade">
+            <option value="1">1학년</option>
+            <option value="2">2학년</option>
+            <option value="3">3학년</option>
+            <option value="4">4학년</option>
+            <option value="5">5학년</option>
+            <option value="6">6학년</option>
+        </select>
 
-    <div class="button-group">
-        <button id="btnReading" onclick="showReading()">음훈</button>
-        <button id="btnWords" onclick="showWords()">단어</button>
-    </div>
+        <button onclick="toggleMode()">모드 전환</button>
 
-    <div style="text-align:right; margin-top:10px;">
-        <label>
-            <input type="checkbox" id="showMeaningChk"> 한자/뜻 같이보기
-        </label>
-    </div>
+        <div class="button-group">
+            <button id="btnReading" onclick="showReading()">음훈</button>
+            <button id="btnWords" onclick="showWords()">단어</button>
+        </div>
 
-    <div class="display kanji" id="display"></div>
+        <div style="text-align:right; margin-top:10px;">
+            <label>
+                <input type="checkbox" id="showMeaningChk"> 한자/뜻 같이보기
+            </label>
+        </div>
 
-    <div style="position:relative; margin-top:10px; height:50px; display:flex; align-items:center;">
-        <div id="counter" style="
-            position:absolute;
-            left:50%;
-            transform:translateX(-50%);
-            font-size:14px;
-            color:#aaa;
-        "></div>
+        <div class="display kanji" id="display"></div>
 
-        <button id="btnMeaning" onclick="showMeaning()" style="
-            margin-left:auto;
-            width:50px;
-            height:50px;
-        ">뜻</button>
-    </div>
+        <div style="position:relative; margin-top:10px; height:50px; display:flex; align-items:center;">
+            <div id="counter" style="
+                position:absolute;
+                left:50%;
+                transform:translateX(-50%);
+                font-size:14px;
+                color:#aaa;
+            "></div>
 
-    <!-- ⭐ 커스텀 슬라이더 -->
-    <div id="sliderWrap">
-        <div id="sliderTrack"></div>
-        <div id="sliderThumb"></div>
-    </div>
+            <button id="btnMeaning" onclick="showMeaning()" style="
+                margin-left:auto;
+                width:50px;
+                height:50px;
+            ">뜻</button>
+        </div>
 
-    <div class="button-group">
-        <button onclick="prevKanji()">이전</button>
-        <button onclick="nextKanji()">다음</button>
+        <!-- 슬라이더 -->
+        <div id="sliderWrap">
+            <div id="sliderTrack"></div>
+            <div id="sliderThumb"></div>
+        </div>
+
+        <div class="button-group">
+            <button onclick="prevKanji()">이전</button>
+            <button onclick="nextKanji()">다음</button>
+        </div>
+
     </div>
 </div>
 
