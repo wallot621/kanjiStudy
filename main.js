@@ -1,183 +1,345 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>한자 학습</title>
+let mode = "kanji";
+let tempMode = null;
+let index = 0;
 
-<style>
-body {
-    background: #0f0f13;
-    color: white;
-    font-family: Arial;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100dvh;
-    margin: 0;
-    overscroll-behavior-x: none;
+let isDragging = false;
+
+/* =========================
+   ⭐ 상태 저장 / 불러오기
+========================= */
+
+function saveState(){
+    localStorage.setItem("kanjiState", JSON.stringify({
+        index,
+        mode,
+        tempMode,
+        grade: document.getElementById("grade").value,
+        showMeaning: document.getElementById("showMeaningChk").checked
+    }));
 }
 
-.phone-frame {
-    width: 100%;
-    max-width: 420px;
-    aspect-ratio: 9 / 19.5;  /* 아이폰 비율 */
-    display: flex;
-    justify-content: center;
-    align-items: center;
+function loadState(){
+    const data = JSON.parse(localStorage.getItem("kanjiState"));
+    if(!data) return;
+
+    index = data.index ?? 0;
+    mode = data.mode ?? "kanji";
+    tempMode = data.tempMode ?? null;
+
+    document.getElementById("grade").value = data.grade ?? "1";
+    document.getElementById("showMeaningChk").checked = data.showMeaning ?? false;
 }
 
-.container {
-    width: 100%;
-    height: 100%;
-    background: #1c1f26;
-    padding: 20px;
-    border-radius: 12px;
-    text-align: center;
-    box-sizing: border-box;
+/* ========================= */
+
+function toHiragana(str){
+    if(!str) return "";
+    return str.replace(/[\u30a1-\u30f6]/g, ch =>
+        String.fromCharCode(ch.charCodeAt(0) - 0x60)
+    );
 }
 
-select, button {
-    width: 100%;
-    padding: 14px;
-    margin-top: 10px;
-    background: #2a2e38;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 0.7em;
+/* ========================= */
+
+function toggleMode(){
+    mode = (mode === "kanji") ? "reading" : "kanji";
+    tempMode = null;
+    update();
 }
 
-.display {
-    height: 320px;        /* ⭐ 고정 높이 */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    white-space: pre-line;
-    overflow: hidden;     /* ⭐ 넘치는 거 잘라냄 */
+function showMeaning(){
+    if(mode === "kanji"){
+        tempMode = (tempMode === "meaning") ? null : "meaning";
+    } else {
+        tempMode = (tempMode === "kanji") ? null : "kanji";
+    }
+    update();
 }
 
-.display.kanji {
-    font-size: 5em;
+function showReading(){
+    tempMode = (tempMode === "reading") ? null : "reading";
+    update();
 }
 
-.display.reading {
-    font-size: 2.5em;
+function showWords(){
+    tempMode = (tempMode === "words") ? null : "words";
+    update();
 }
 
-.button-group {
-    display: flex;
-    gap: 10px;
+/* ========================= */
+
+function nextKanji(){
+    let list = kanjiData[document.getElementById("grade").value];
+    index = (index + 1) % list.length;
+    tempMode = null;
+    update();
 }
 
-.button-group button.active {
-    background: #4caf50;
+function prevKanji(){
+    let list = kanjiData[document.getElementById("grade").value];
+    index = (index - 1 + list.length) % list.length;
+    tempMode = null;
+    update();
 }
 
-/* ⭐ 커스텀 슬라이더 */
-#sliderWrap {
-    position: relative;
-    width: 85%;          /* ⭐ 길이 줄임 */
-    margin: 10px auto 0;
-    height: 30px;
+/* =========================
+   ⭐ 뜻 길이에 따른 폰트 크기
+========================= */
 
-    touch-action: pan-y; /* ⭐ 좌우 스와이프 방지 */
+function getMeaningFontSize(text){
+    const len = text.length;
+
+    if(len <= 6) return "0.9em";
+    if(len <= 10) return "0.8em";
+    if(len <= 14) return "0.7em";
+    return "0.6em";
 }
 
-#sliderTrack {
-    position: absolute;
-    top: 50%;
-    left: 0;
-    width: 100%;
-    height: 6px;
-    background: #444;
-    transform: translateY(-50%);
-    border-radius: 3px;
+/* ========================= */
+
+function update(){
+    let list = kanjiData[document.getElementById("grade").value];
+    let display = document.getElementById("display");
+    let sliderThumb = document.getElementById("sliderThumb");
+
+    let btnMeaning = document.getElementById("btnMeaning");
+    let btnReading = document.getElementById("btnReading");
+    let btnWords = document.getElementById("btnWords");
+
+    let showMeaningChk = document.getElementById("showMeaningChk").checked;
+
+    if(!list || list.length === 0){
+        display.innerText = "데이터 없음";
+        return;
+    }
+
+    let item = list[index];
+
+    /* 초기화 */
+    display.innerHTML = "";
+    display.innerText = "";
+
+    /* 슬라이더 */
+    const percent = index / (list.length - 1);
+    sliderThumb.style.left = (percent * 100) + "%";
+
+    /* 버튼 초기화 */
+    btnMeaning.classList.remove("active");
+    btnReading.classList.remove("active");
+    btnWords.classList.remove("active");
+
+    btnMeaning.innerText = (mode === "kanji") ? "뜻" : "한자";
+
+    /* =========================
+       ⭐ 출력 (구조 통일 핵심)
+    ========================= */
+
+    if(tempMode === "meaning"){
+        display.innerHTML = `
+            <div style="
+                display:flex;
+                align-items:center;
+                justify-content:center;
+                height:100%;
+                font-size:2.5em;
+            ">
+                ${item.r}
+            </div>
+        `;
+        display.className = "display reading";
+        btnMeaning.classList.add("active");
+    }
+
+    else if(tempMode === "kanji"){
+        display.innerHTML = `
+            <div style="
+                display:flex;
+                align-items:center;
+                justify-content:center;
+                height:100%;
+                font-size:5em;
+                font-weight:bold;
+            ">
+                ${item.k}
+            </div>
+        `;
+        display.className = "display kanji";
+        btnMeaning.classList.add("active");
+    }
+
+    else if(tempMode === "reading"){
+        display.innerHTML = `
+            <div style="
+                display:flex;
+                flex-direction:column;
+                justify-content:center;
+                align-items:center;
+                height:100%;
+                font-size:2em;
+                gap:0.3em;
+            ">
+                <div>${toHiragana(item.on)}</div>
+                <div>${toHiragana(item.kun)}</div>
+            </div>
+        `;
+        display.className = "display reading";
+        btnReading.classList.add("active");
+    }
+
+    else if(tempMode === "words"){
+        const m1Size = getMeaningFontSize(item.words[0].m);
+        const m2Size = getMeaningFontSize(item.words[1].m);
+
+        display.innerHTML = `
+            <div style="
+                display:grid;
+                grid-template-columns:1fr 1fr;
+                column-gap:2em;
+                row-gap:0.2em;
+                text-align:center;
+                height:100%;
+                align-content:center;
+            ">
+                <div style="font-size:1.2em; font-weight:bold;">
+                    ${item.words[0].w}
+                </div>
+                <div style="font-size:1.2em; font-weight:bold;">
+                    ${item.words[1].w}
+                </div>
+
+                <div style="font-size:0.6em; color:#aaa;">
+                    (${item.words[0].y})
+                </div>
+                <div style="font-size:0.6em; color:#aaa;">
+                    (${item.words[1].y})
+                </div>
+
+                <div style="font-size:${m1Size};">
+                    ${item.words[0].m}
+                </div>
+                <div style="font-size:${m2Size};">
+                    ${item.words[1].m}
+                </div>
+            </div>
+        `;
+        display.className = "display reading";
+        btnWords.classList.add("active");
+    }
+
+    else if(showMeaningChk){
+        display.innerHTML = `
+            <div style="
+                display:flex;
+                flex-direction:column;
+                justify-content:center;
+                align-items:center;
+                height:100%;
+                gap:0.3em;
+            ">
+                <div style="font-size:5em; font-weight:bold;">
+                    ${item.k}
+                </div>
+                <div style="font-size:2em; color:#aaa;">
+                    ${item.r}
+                </div>
+            </div>
+        `;
+        display.className = "display";
+    }
+
+    else {
+        if(mode === "kanji"){
+            display.innerHTML = `
+                <div style="
+                    display:flex;
+                    align-items:center;
+                    justify-content:center;
+                    height:100%;
+                    font-size:5em;
+                    font-weight:bold;
+                ">
+                    ${item.k}
+                </div>
+            `;
+            display.className = "display kanji";
+        } else {
+            display.innerHTML = `
+                <div style="
+                    display:flex;
+                    align-items:center;
+                    justify-content:center;
+                    height:100%;
+                    font-size:2.5em;
+                ">
+                    ${item.r}
+                </div>
+            `;
+            display.className = "display reading";
+        }
+    }
+
+    /* 카운터 */
+    document.getElementById("counter").innerText =
+        (index + 1) + " / " + list.length;
+
+    saveState();
 }
 
-#sliderThumb {
-    position: absolute;
-    top: 50%;
-    width: 20px;
-    height: 20px;
-    background: #4caf50;
-    border-radius: 50%;
-    transform: translate(-50%, -50%);
-}
-</style>
-</head>
+/* =========================
+   ⭐ 슬라이더 + 초기화
+========================= */
 
-<body>
+window.onload = () => {
 
-<div class="phone-frame">
-    <div class="container">
+    loadState();
 
-        <h2>초등 상용한자 V0.3</h2>
+    const wrap = document.getElementById("sliderWrap");
+    const thumb = document.getElementById("sliderThumb");
 
-        <select id="grade">
-            <option value="1">1학년</option>
-            <option value="2">2학년</option>
-            <option value="3">3학년</option>
-            <option value="4">4학년</option>
-            <option value="5">5학년</option>
-            <option value="6">6학년</option>
-        </select>
+    function move(clientX){
+        const rect = wrap.getBoundingClientRect();
 
-        <button onclick="toggleMode()">모드 전환</button>
+        let x = clientX - rect.left;
+        x = Math.max(0, Math.min(x, rect.width));
 
-        <div class="button-group">
-            <button id="btnReading" onclick="showReading()">음훈</button>
-            <button id="btnWords" onclick="showWords()">단어</button>
-        </div>
+        const percent = x / rect.width;
 
-        <div style="text-align:right; margin-top:10px;">
-            <label>
-                <input type="checkbox" id="showMeaningChk"> 한자/뜻 같이보기
-            </label>
-        </div>
+        let list = kanjiData[document.getElementById("grade").value];
+        index = Math.round(percent * (list.length - 1));
 
-        <div class="display kanji" id="display"></div>
+        tempMode = null;
+        update();
+    }
 
-        <div style="position:relative; margin-top:10px; height:50px; display:flex; align-items:center;">
-            <div id="counter" style="
-                position:absolute;
-                left:50%;
-                transform:translateX(-50%);
-                font-size:14px;
-                color:#aaa;
-            "></div>
+    /* PC */
+    thumb.addEventListener("mousedown", () => isDragging = true);
 
-            <button id="btnMeaning" onclick="showMeaning()" style="
-                margin-left:auto;
-                width:50px;
-                height:50px;
-            ">뜻</button>
-        </div>
+    document.addEventListener("mousemove", (e) => {
+        if(!isDragging) return;
+        move(e.clientX);
+    });
 
-        <!-- 슬라이더 -->
-        <div id="sliderWrap">
-            <div id="sliderTrack"></div>
-            <div id="sliderThumb"></div>
-        </div>
+    document.addEventListener("mouseup", () => isDragging = false);
 
-        <div class="button-group">
-            <button onclick="prevKanji()">이전</button>
-            <button onclick="nextKanji()">다음</button>
-        </div>
+    /* 모바일 */
+    thumb.addEventListener("touchstart", () => isDragging = true);
 
-    </div>
-</div>
+    document.addEventListener("touchmove", (e) => {
+        if(!isDragging) return;
+        move(e.touches[0].clientX);
+    });
 
-<script src="./grade1.js"></script>
-<script src="./grade2.js"></script>
-<script src="./grade3.js"></script>
-<script src="./grade4.js"></script>
-<script src="./grade5.js"></script>
-<script src="./grade6.js"></script>
+    document.addEventListener("touchend", () => isDragging = false);
 
-<script src="./kanjiData.js"></script>
-<script src="./main.js"></script>
+    document.getElementById("showMeaningChk")
+        .addEventListener("change", update);
 
-</body>
-</html>
+    document.getElementById("grade")
+        .addEventListener("change", () => {
+            index = 0;
+            tempMode = null;
+            update();
+        });
+
+    update();
+};
