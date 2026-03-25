@@ -1,345 +1,181 @@
-let mode = "kanji";
-let tempMode = null;
-let index = 0;
+// ===== 데이터 합치기 =====
+const list = [
+  ...grade1,
+  ...grade2,
+  ...grade3,
+  ...grade4,
+  ...grade5,
+  ...grade6
+];
 
-let isDragging = false;
+// ===== 상태 =====
+let index = parseInt(localStorage.getItem("index")) || 0;
+let mode = localStorage.getItem("mode") || "kanji";
+let showReading = localStorage.getItem("reading") === "true";
+let showWords = localStorage.getItem("words") !== "false";
+let scrollEnabled = false;
+let tempView = false;
 
-/* =========================
-   ⭐ 상태 저장 / 불러오기
-========================= */
+// ===== 요소 =====
+const display = document.getElementById("display");
+const progress = document.getElementById("progress");
+const counter = document.getElementById("counter");
 
-function saveState(){
-    localStorage.setItem("kanjiState", JSON.stringify({
-        index,
-        mode,
-        tempMode,
-        grade: document.getElementById("grade").value,
-        showMeaning: document.getElementById("showMeaningChk").checked
-    }));
+// ===== 렌더 =====
+function render() {
+  const item = list[index];
+
+  let html = "";
+
+  // ===== 메인 =====
+  if (mode === "kanji" && !tempView) {
+    html += `<div class="main-kanji">${item.k}</div>`;
+  } else {
+    html += `<div class="main-meaning">${item.r}</div>`;
+  }
+
+  // ===== 음훈 =====
+  if (showReading || tempView) {
+    html += `
+      <div class="reading-box">
+        <div>${item.on}</div>
+        <div>${item.kun}</div>
+      </div>
+    `;
+  }
+
+  // ===== 단어 =====
+  if ((showWords || tempView) && item.words) {
+    html += `
+      <div class="words">
+        ${renderWord(item.words[0])}
+        ${renderWord(item.words[1])}
+      </div>
+    `;
+  }
+
+  display.innerHTML = html;
+
+  // ===== 진행바 =====
+  if (progress) {
+    progress.style.width =
+      ((index + 1) / list.length * 100) + "%";
+  }
+
+  // ===== 카운터 =====
+  if (counter) {
+    counter.textContent = `${index + 1} / ${list.length}`;
+  }
+
+  updateButtons();
+  saveState();
 }
 
-function loadState(){
-    const data = JSON.parse(localStorage.getItem("kanjiState"));
-    if(!data) return;
-
-    index = data.index ?? 0;
-    mode = data.mode ?? "kanji";
-    tempMode = data.tempMode ?? null;
-
-    document.getElementById("grade").value = data.grade ?? "1";
-    document.getElementById("showMeaningChk").checked = data.showMeaning ?? false;
+// ===== 단어 =====
+function renderWord(word) {
+  return `
+    <div class="word-box">
+      <div class="word-kanji">${word.w}</div>
+      <div class="word-reading">${word.y}</div>
+      <div class="word-meaning">${word.m}</div>
+    </div>
+  `;
 }
 
-/* ========================= */
-
-function toHiragana(str){
-    if(!str) return "";
-    return str.replace(/[\u30a1-\u30f6]/g, ch =>
-        String.fromCharCode(ch.charCodeAt(0) - 0x60)
-    );
+// ===== 이동 =====
+function next() {
+  index = (index + 1) % list.length;
+  render();
 }
 
-/* ========================= */
-
-function toggleMode(){
-    mode = (mode === "kanji") ? "reading" : "kanji";
-    tempMode = null;
-    update();
+function prev() {
+  index = (index - 1 + list.length) % list.length;
+  render();
 }
 
-function showMeaning(){
-    if(mode === "kanji"){
-        tempMode = (tempMode === "meaning") ? null : "meaning";
-    } else {
-        tempMode = (tempMode === "kanji") ? null : "kanji";
-    }
-    update();
+// ===== 모드 =====
+function toggleMode() {
+  mode = mode === "kanji" ? "meaning" : "kanji";
+  render();
 }
 
-function showReading(){
-    tempMode = (tempMode === "reading") ? null : "reading";
-    update();
+// ===== 음훈 =====
+function toggleReading() {
+  showReading = !showReading;
+  render();
 }
 
-function showWords(){
-    tempMode = (tempMode === "words") ? null : "words";
-    update();
+// ===== 단어 =====
+function toggleWords() {
+  showWords = !showWords;
+  render();
 }
 
-/* ========================= */
-
-function nextKanji(){
-    let list = kanjiData[document.getElementById("grade").value];
-    index = (index + 1) % list.length;
-    tempMode = null;
-    update();
+// ===== tempView (꾹 누르면 보기) =====
+function tempOn() {
+  tempView = true;
+  render();
 }
 
-function prevKanji(){
-    let list = kanjiData[document.getElementById("grade").value];
-    index = (index - 1 + list.length) % list.length;
-    tempMode = null;
-    update();
+function tempOff() {
+  tempView = false;
+  render();
 }
 
-/* =========================
-   ⭐ 뜻 길이에 따른 폰트 크기
-========================= */
+// ===== 스크롤 =====
+const slider = document.getElementById("slider");
 
-function getMeaningFontSize(text){
-    const len = text.length;
-
-    if(len <= 6) return "0.9em";
-    if(len <= 10) return "0.8em";
-    if(len <= 14) return "0.7em";
-    return "0.6em";
+if (slider) {
+  slider.addEventListener("input", (e) => {
+    if (!scrollEnabled) return;
+    index = parseInt(e.target.value);
+    render();
+  });
 }
 
-/* ========================= */
-
-function update(){
-    let list = kanjiData[document.getElementById("grade").value];
-    let display = document.getElementById("display");
-    let sliderThumb = document.getElementById("sliderThumb");
-
-    let btnMeaning = document.getElementById("btnMeaning");
-    let btnReading = document.getElementById("btnReading");
-    let btnWords = document.getElementById("btnWords");
-
-    let showMeaningChk = document.getElementById("showMeaningChk").checked;
-
-    if(!list || list.length === 0){
-        display.innerText = "데이터 없음";
-        return;
-    }
-
-    let item = list[index];
-
-    /* 초기화 */
-    display.innerHTML = "";
-    display.innerText = "";
-
-    /* 슬라이더 */
-    const percent = index / (list.length - 1);
-    sliderThumb.style.left = (percent * 100) + "%";
-
-    /* 버튼 초기화 */
-    btnMeaning.classList.remove("active");
-    btnReading.classList.remove("active");
-    btnWords.classList.remove("active");
-
-    btnMeaning.innerText = (mode === "kanji") ? "뜻" : "한자";
-
-    /* =========================
-       ⭐ 출력 (구조 통일 핵심)
-    ========================= */
-
-    if(tempMode === "meaning"){
-        display.innerHTML = `
-            <div style="
-                display:flex;
-                align-items:center;
-                justify-content:center;
-                height:100%;
-                font-size:2.5em;
-            ">
-                ${item.r}
-            </div>
-        `;
-        display.className = "display reading";
-        btnMeaning.classList.add("active");
-    }
-
-    else if(tempMode === "kanji"){
-        display.innerHTML = `
-            <div style="
-                display:flex;
-                align-items:center;
-                justify-content:center;
-                height:100%;
-                font-size:5em;
-                font-weight:bold;
-            ">
-                ${item.k}
-            </div>
-        `;
-        display.className = "display kanji";
-        btnMeaning.classList.add("active");
-    }
-
-    else if(tempMode === "reading"){
-        display.innerHTML = `
-            <div style="
-                display:flex;
-                flex-direction:column;
-                justify-content:center;
-                align-items:center;
-                height:100%;
-                font-size:2em;
-                gap:0.3em;
-            ">
-                <div>${toHiragana(item.on)}</div>
-                <div>${toHiragana(item.kun)}</div>
-            </div>
-        `;
-        display.className = "display reading";
-        btnReading.classList.add("active");
-    }
-
-    else if(tempMode === "words"){
-        const m1Size = getMeaningFontSize(item.words[0].m);
-        const m2Size = getMeaningFontSize(item.words[1].m);
-
-        display.innerHTML = `
-            <div style="
-                display:grid;
-                grid-template-columns:1fr 1fr;
-                column-gap:2em;
-                row-gap:0.2em;
-                text-align:center;
-                height:100%;
-                align-content:center;
-            ">
-                <div style="font-size:1.2em; font-weight:bold;">
-                    ${item.words[0].w}
-                </div>
-                <div style="font-size:1.2em; font-weight:bold;">
-                    ${item.words[1].w}
-                </div>
-
-                <div style="font-size:0.6em; color:#aaa;">
-                    (${item.words[0].y})
-                </div>
-                <div style="font-size:0.6em; color:#aaa;">
-                    (${item.words[1].y})
-                </div>
-
-                <div style="font-size:${m1Size};">
-                    ${item.words[0].m}
-                </div>
-                <div style="font-size:${m2Size};">
-                    ${item.words[1].m}
-                </div>
-            </div>
-        `;
-        display.className = "display reading";
-        btnWords.classList.add("active");
-    }
-
-    else if(showMeaningChk){
-        display.innerHTML = `
-            <div style="
-                display:flex;
-                flex-direction:column;
-                justify-content:center;
-                align-items:center;
-                height:100%;
-                gap:0.3em;
-            ">
-                <div style="font-size:5em; font-weight:bold;">
-                    ${item.k}
-                </div>
-                <div style="font-size:2em; color:#aaa;">
-                    ${item.r}
-                </div>
-            </div>
-        `;
-        display.className = "display";
-    }
-
-    else {
-        if(mode === "kanji"){
-            display.innerHTML = `
-                <div style="
-                    display:flex;
-                    align-items:center;
-                    justify-content:center;
-                    height:100%;
-                    font-size:5em;
-                    font-weight:bold;
-                ">
-                    ${item.k}
-                </div>
-            `;
-            display.className = "display kanji";
-        } else {
-            display.innerHTML = `
-                <div style="
-                    display:flex;
-                    align-items:center;
-                    justify-content:center;
-                    height:100%;
-                    font-size:2.5em;
-                ">
-                    ${item.r}
-                </div>
-            `;
-            display.className = "display reading";
-        }
-    }
-
-    /* 카운터 */
-    document.getElementById("counter").innerText =
-        (index + 1) + " / " + list.length;
-
-    saveState();
+// ===== 스크롤 잠금 =====
+function toggleScroll() {
+  scrollEnabled = !scrollEnabled;
+  updateButtons();
 }
 
-/* =========================
-   ⭐ 슬라이더 + 초기화
-========================= */
+// ===== 버튼 상태 =====
+function updateButtons() {
+  const readingBtn = document.getElementById("btn-reading");
+  const wordBtn = document.getElementById("btn-word");
+  const scrollBtn = document.getElementById("btn-scroll");
 
-window.onload = () => {
+  if (readingBtn) {
+    readingBtn.classList.toggle("active", showReading);
+  }
 
-    loadState();
+  if (wordBtn) {
+    wordBtn.classList.toggle("active", showWords);
+  }
 
-    const wrap = document.getElementById("sliderWrap");
-    const thumb = document.getElementById("sliderThumb");
+  if (scrollBtn) {
+    scrollBtn.classList.toggle("active", scrollEnabled);
+  }
+}
 
-    function move(clientX){
-        const rect = wrap.getBoundingClientRect();
+// ===== 상태 저장 =====
+function saveState() {
+  localStorage.setItem("index", index);
+  localStorage.setItem("mode", mode);
+  localStorage.setItem("reading", showReading);
+  localStorage.setItem("words", showWords);
+}
 
-        let x = clientX - rect.left;
-        x = Math.max(0, Math.min(x, rect.width));
+// ===== 키보드 =====
+document.addEventListener("keydown", (e) => {
+  if (e.key === "ArrowRight") next();
+  if (e.key === "ArrowLeft") prev();
+});
 
-        const percent = x / rect.width;
+// ===== 초기화 =====
+if (slider) {
+  slider.max = list.length - 1;
+  slider.value = index;
+}
 
-        let list = kanjiData[document.getElementById("grade").value];
-        index = Math.round(percent * (list.length - 1));
-
-        tempMode = null;
-        update();
-    }
-
-    /* PC */
-    thumb.addEventListener("mousedown", () => isDragging = true);
-
-    document.addEventListener("mousemove", (e) => {
-        if(!isDragging) return;
-        move(e.clientX);
-    });
-
-    document.addEventListener("mouseup", () => isDragging = false);
-
-    /* 모바일 */
-    thumb.addEventListener("touchstart", () => isDragging = true);
-
-    document.addEventListener("touchmove", (e) => {
-        if(!isDragging) return;
-        move(e.touches[0].clientX);
-    });
-
-    document.addEventListener("touchend", () => isDragging = false);
-
-    document.getElementById("showMeaningChk")
-        .addEventListener("change", update);
-
-    document.getElementById("grade")
-        .addEventListener("change", () => {
-            index = 0;
-            tempMode = null;
-            update();
-        });
-
-    update();
-};
+render();
